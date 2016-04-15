@@ -1,20 +1,19 @@
-CFLAGS+= -Wall
-LDADD+= -lX11 
-LDFLAGS=
-EXEC=catwm
+NAME= catwm
+CFLAGS= -Wall -Wextra -pedantic
+CFLAGS+= -std=c99 -O2
+LIBS= -lX11
+CC= gcc
 
-PREFIX?= /usr
-BINDIR?= $(PREFIX)/bin
+# Only for OpenBSD:
+LIBPATH= -L/usr/X11R6/lib
+INCPATH= -I/usr/X11R6/include
 
-CC=gcc
+FLAGS= $(INCPATH) $(LIBPATH) $(CFLAGS) $(LIBS)
 
-all: $(EXEC)
+all: catwm
 
-catwm: catwm.o
-	$(CC) $(LDFLAGS) -Os -o $@ $+ $(LDADD)
-
-install: all
-	install -Dm 755 catwm $(DESTDIR)$(BINDIR)/catwm
+catwm:
+	$(CC) $(FLAGS) $(NAME).c -o $(NAME)
 
 clean:
-	rm -f catwm *.o
+	rm -f $(NAME)
