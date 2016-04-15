@@ -1,34 +1,3 @@
- /*
- *   /\___/\
- *  ( o   o )  Made by cat...
- *  (  =^=  )
- *  (        )            ... for cat!
- *  (         )
- *  (          ))))))________________ Cute And Tiny Window Manager
- *  ______________________________________________________________________________
- *
- *  Copyright (c) 2010, Rinaldini Julien, julien.rinaldini@heig-vd.ch
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a
- *  copy of this software and associated documentation files (the "Software"),
- *  to deal in the Software without restriction, including without limitation
- *  the rights to use, copy, modify, merge, publish, distribute, sublicense,
- *  and/or sell copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- *  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- *  DEALINGS IN THE SOFTWARE.
- *
- */
-
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
@@ -121,6 +90,7 @@ static int sw;
 static int screen;
 static unsigned int win_focus;
 static unsigned int win_unfocus;
+static unsigned int win_monocle;
 static Window root;
 static client *head;
 static client *current;
@@ -522,6 +492,7 @@ void setup() {
     // Colors
     win_focus = getcolor(FOCUS);
     win_unfocus = getcolor(UNFOCUS);
+    win_monocle = getcolor(MONOCLE);
 
     // Shortcuts
     grabkeys();
@@ -614,24 +585,33 @@ void tile() {
 
     // If only one window
     if(head != NULL && head->next == NULL) {
-        XMoveResizeWindow(dis,head->win,0,0,sw-2,sh-2);
+        XMoveResizeWindow(dis,head->win,
+		GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
     }
     else if(head != NULL) {
         switch(mode) {
             case 0:
                 // Master window
-                XMoveResizeWindow(dis,head->win,0,0,master_size-2,sh-2);
+                XMoveResizeWindow(dis,head->win,
+			GAP, GAP, master_size-GAP*2-BORDER*2,
+			sh-GAP*2-BORDER*2);
 
                 // Stack
                 for(c=head->next;c;c=c->next) ++n;
                 for(c=head->next;c;c=c->next) {
-                    XMoveResizeWindow(dis,c->win,master_size,y,sw-master_size-2,(sh/n)-2);
+                    XMoveResizeWindow(dis,c->win,
+			master_size+GAP, y+GAP,
+			sw-master_size - GAP*2 - BORDER*2,
+			(sh/n) - GAP*2 - BORDER*2);
+
                     y += sh/n;
                 }
                 break;
             case 1:
+		// Monocle mode
                 for(c=head;c;c=c->next) {
-                    XMoveResizeWindow(dis,c->win,0,0,sw,sh);
+                    XMoveResizeWindow(dis,c->win,
+			GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
                 }
                 break;
             default:
@@ -646,8 +626,11 @@ void update_current() {
     for(c=head;c;c=c->next)
         if(current == c) {
             // "Enable" current window
-            XSetWindowBorderWidth(dis,c->win,1);
-            XSetWindowBorder(dis,c->win,win_focus);
+            XSetWindowBorderWidth(dis,c->win,BORDER);
+
+	    if (mode) XSetWindowBorder(dis,c->win,win_monocle);
+            else XSetWindowBorder(dis,c->win,win_focus);
+
             XSetInputFocus(dis,c->win,RevertToParent,CurrentTime);
             XRaiseWindow(dis,c->win);
         }
