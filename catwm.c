@@ -182,6 +182,7 @@ void configurenotify(XEvent *e) {
     // Do nothing for the moment
 }
 
+
 void configurerequest(XEvent *e) {
     // Paste from DWM, thx again \o/
     XConfigureRequestEvent *ev = &e->xconfigurerequest;
@@ -269,18 +270,18 @@ void keypress(XEvent *e) {
 }
 
 void kill_client() {
-	if(current != NULL) {
-		//send delete signal to window
-		XEvent ke;
-		ke.type = ClientMessage;
-		ke.xclient.window = current->win;
-		ke.xclient.message_type = XInternAtom(dis, "WM_PROTOCOLS", True);
-		ke.xclient.format = 32;
-		ke.xclient.data.l[0] = XInternAtom(dis, "WM_DELETE_WINDOW", True);
-		ke.xclient.data.l[1] = CurrentTime;
-		XSendEvent(dis, current->win, False, NoEventMask, &ke);
-		send_kill_signal(current->win);
-	}
+        if(current != NULL) {
+                //send delete signal to window
+                XEvent ke;
+                ke.type = ClientMessage;
+                ke.xclient.window = current->win;
+                ke.xclient.message_type = XInternAtom(dis, "WM_PROTOCOLS", True);
+                ke.xclient.format = 32;
+                ke.xclient.data.l[0] = XInternAtom(dis, "WM_DELETE_WINDOW", True);
+                ke.xclient.data.l[1] = CurrentTime;
+                XSendEvent(dis, current->win, False, NoEventMask, &ke);
+                send_kill_signal(current->win);
+        }
 }
  
 void maprequest(XEvent *e) {
@@ -316,9 +317,9 @@ void move_down() {
 
 void move_up() {
     Window tmp;
-    if(current == NULL || current->prev == head || current->win == head->win) {
+    if(current == NULL || current->prev == head || current->win == head->win)
         return;
-    }
+
     tmp = current->win;
     current->win = current->prev->win;
     current->prev->win = tmp;
@@ -342,7 +343,7 @@ void next_win() {
     client *c;
 
     if(current != NULL && head != NULL) {
-		if(current->next == NULL)
+        if(current->next == NULL)
             c = head;
         else
             c = current->next;
@@ -530,9 +531,9 @@ void setup() {
 
 void sigchld(int unused) {
     // Again, thx to dwm ;)
-	if(signal(SIGCHLD, sigchld) == SIG_ERR)
-		die("Can't install SIGCHLD handler");
-	while(0 < waitpid(-1, NULL, WNOHANG));
+        if(signal(SIGCHLD, sigchld) == SIG_ERR)
+                die("Can't install SIGCHLD handler");
+        while(0 < waitpid(-1, NULL, WNOHANG));
 }
 
 void spawn(const Arg arg) {
@@ -586,32 +587,32 @@ void tile() {
     // If only one window
     if(head != NULL && head->next == NULL) {
         XMoveResizeWindow(dis,head->win,
-		GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
+                GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
     }
     else if(head != NULL) {
         switch(mode) {
             case 0:
                 // Master window
                 XMoveResizeWindow(dis,head->win,
-			GAP, GAP, master_size-GAP*2-BORDER*2,
-			sh-GAP*2-BORDER*2);
+                        GAP, GAP, master_size-GAP*2-BORDER*2,
+                        sh-GAP*2-BORDER*2);
 
                 // Stack
                 for(c=head->next;c;c=c->next) ++n;
                 for(c=head->next;c;c=c->next) {
                     XMoveResizeWindow(dis,c->win,
-			master_size+GAP, y+GAP,
-			sw-master_size - GAP*2 - BORDER*2,
-			(sh/n) - GAP*2 - BORDER*2);
+                        master_size+GAP, y+GAP,
+                        sw-master_size - GAP*2 - BORDER*2,
+                        (sh/n) - GAP*2 - BORDER*2);
 
                     y += sh/n;
                 }
                 break;
             case 1:
-		// Monocle mode
+                // Monocle mode
                 for(c=head;c;c=c->next) {
                     XMoveResizeWindow(dis,c->win,
-			GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
+                        GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
                 }
                 break;
             default:
@@ -623,19 +624,19 @@ void tile() {
 void update_current() {
     client *c;
 
-    for(c=head;c;c=c->next)
+    for(c=head;c;c=c->next) {
         if(current == c) {
             // "Enable" current window
             XSetWindowBorderWidth(dis,c->win,BORDER);
 
-	    if (mode) XSetWindowBorder(dis,c->win,win_monocle);
+            if (mode) XSetWindowBorder(dis,c->win,win_monocle);
             else XSetWindowBorder(dis,c->win,win_focus);
 
             XSetInputFocus(dis,c->win,RevertToParent,CurrentTime);
             XRaiseWindow(dis,c->win);
         }
-        else
-            XSetWindowBorder(dis,c->win,win_unfocus);
+        else XSetWindowBorder(dis,c->win,win_unfocus);
+    }
 }
 
 int main(int argc, char **argv) {
