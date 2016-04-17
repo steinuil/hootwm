@@ -35,5 +35,7 @@ A horizontal stacking mode might be added in the future.
  * Monocle mode now has a different color setting
 
 ## Bugs
+ * Invoking a window in monocle mode overlays it to the fullscreen window
+   * FIX: send it to next desktop?
  * Sending a window to another desktop causes the wm to crash
  * Compiler warnings

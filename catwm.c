@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <stdbool.h>
 
 #define TABLENGTH(X)    (sizeof(X)/sizeof(*X))
 
@@ -76,6 +77,9 @@ static void switch_mode();
 static void tile();
 static void update_current();
 
+static void widen_gaps();
+static void lessen_gaps();
+
 // Include configuration file (need struct key)
 #include "config.h"
 
@@ -94,6 +98,8 @@ static unsigned int win_monocle;
 static Window root;
 static client *head;
 static client *current;
+
+int gap = GAP;
 
 // Events array
 static void (*events[LASTEvent])(XEvent *e) = {
@@ -586,24 +592,29 @@ void tile() {
 
     // If only one window
     if(head != NULL && head->next == NULL) {
-        XMoveResizeWindow(dis,head->win,
-                GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
+        if (!mode) {
+            XMoveResizeWindow(dis,head->win,
+                    gap, gap, sw-gap*2-BORDER*2, sh-gap*2-BORDER*2);
+        } else {
+            XMoveResizeWindow(dis,head->win, 0, 0, sw - BORDER * 2, sh - BORDER * 2);
+        }
+
     }
     else if(head != NULL) {
         switch(mode) {
             case 0:
                 // Master window
                 XMoveResizeWindow(dis,head->win,
-                        GAP, GAP, master_size-GAP*2-BORDER*2,
-                        sh-GAP*2-BORDER*2);
+                        gap, gap, master_size-gap*2-BORDER*2,
+                        sh-gap*2-BORDER*2);
 
                 // Stack
                 for(c=head->next;c;c=c->next) ++n;
                 for(c=head->next;c;c=c->next) {
                     XMoveResizeWindow(dis,c->win,
-                        master_size+GAP, y+GAP,
-                        sw-master_size - GAP*2 - BORDER*2,
-                        (sh/n) - GAP*2 - BORDER*2);
+                        master_size+gap, y+gap,
+                        sw-master_size - gap*2 - BORDER*2,
+                        (sh/n) - gap*2 - BORDER*2);
 
                     y += sh/n;
                 }
@@ -611,8 +622,8 @@ void tile() {
             case 1:
                 // Monocle mode
                 for(c=head;c;c=c->next) {
-                    XMoveResizeWindow(dis,c->win,
-                        GAP, GAP, sw-GAP*2-BORDER*2, sh-GAP*2-BORDER*2);
+                    XMoveResizeWindow(dis,c->win, 0, 0,
+                            sw - BORDER * 2, sh - BORDER * 2);
                 }
                 break;
             default:
@@ -629,8 +640,11 @@ void update_current() {
             // "Enable" current window
             XSetWindowBorderWidth(dis,c->win,BORDER);
 
-            if (mode) XSetWindowBorder(dis,c->win,win_monocle);
-            else XSetWindowBorder(dis,c->win,win_focus);
+            if (mode) {
+                XSetWindowBorder(dis,c->win,win_monocle);
+            } else {
+                XSetWindowBorder(dis,c->win,win_focus);
+            }
 
             XSetInputFocus(dis,c->win,RevertToParent,CurrentTime);
             XRaiseWindow(dis,c->win);
@@ -639,7 +653,17 @@ void update_current() {
     }
 }
 
-int main(int argc, char **argv) {
+void widen_gaps() {
+    if (gap < 50) gap++;
+    tile();
+}
+
+void lessen_gaps() {
+    if (gap > 0) gap--;
+    tile();
+}
+
+int main() {
     // Open display   
     if(!(dis = XOpenDisplay(NULL)))
         die("Cannot open display!");

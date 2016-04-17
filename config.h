@@ -24,7 +24,7 @@ static struct key keys[] = {
     {  MOD,             XK_l,       increase,       {NULL}},
     {  MOD,             XK_x,       kill_client,    {NULL}},
     {  MOD,             XK_j,       next_win,       {NULL}},
-    {  MOD,             XK_Tab,     next_win,       {NULL}},
+//  {  MOD,             XK_Tab,     next_win,       {NULL}},
     {  MOD,             XK_k,       prev_win,       {NULL}},
     {  MOD|ShiftMask,   XK_j,       move_down,      {NULL}},
     {  MOD|ShiftMask,   XK_k,       move_up,        {NULL}},
@@ -32,6 +32,8 @@ static struct key keys[] = {
     {  MOD|ShiftMask,   XK_space,   switch_mode,    {NULL}},
     {  MOD,             XK_Right,   next_desktop,   {NULL}},
     {  MOD,             XK_Left,    prev_desktop,   {NULL}},
+    {  MOD,             XK_less,    lessen_gaps,    {NULL}},
+    {  MOD|ShiftMask,   XK_less,    widen_gaps,     {NULL}},
        DESKTOPCHANGE(   XK_0,                       0)
        DESKTOPCHANGE(   XK_1,                       1)
        DESKTOPCHANGE(   XK_2,                       2)
