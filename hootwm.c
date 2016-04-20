@@ -17,10 +17,12 @@ uint16_t master_size;
 
 uint8_t gap, bord;
 
-uint8_t run;
+uint32_t win_focus, win_unfocus;
+
+bool run;
 
 void p(char *s) {
-    printf("catwm: %s\n", s);
+    printf("hootwm: %s\n", s);
 }
 
 // Manage nodes
@@ -47,13 +49,14 @@ void tile(void) {
                 master_size - gap*2 - bord*2, screen_h - gap*2 - bord*2);
 
         node *c;
-        uint8_t y = 0;
+        uint16_t y = 0;
         uint8_t n = 0;
         for (c = head ; c ; c = c->next) ++n;
         for (c = head ; c ; c = c->next) {
             move_resize(c->win, master_size + gap, y + gap,
                     screen_w - master_size - gap*2 - bord*2,
-                    screen_h / n - gap*2 - bord*2);
+                    ((c->next) ? (screen_h / n) : screen_h - y) -
+                    gap*2 - bord*2);
             y += screen_h / n;
         }
     }
@@ -64,16 +67,17 @@ void update_current(void) {
 
     for (c = master ; c ; c = c->next) {
         uint32_t a[1] = { bord };
+
         xcb_configure_window(conn, c->win, XCB_CONFIG_WINDOW_BORDER_WIDTH, a);
         if (c == current) {
-            //xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
-            //        win_focus);
+            xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
+                    &win_focus);
             xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT,
                     c->win, XCB_CURRENT_TIME);
 
-        } else { ;
-            //xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
-            //        win_unfocus);
+        } else {
+            xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
+                    &win_unfocus);
         }
     }
 }
@@ -107,21 +111,24 @@ void setup(void) {
     current = NULL;
 
     master_size = screen_w * 0.6;
-    gap = 5;
+    gap = 1;
     bord = 3;
 
-    run = 1;
+    win_focus = 52260;
+    win_unfocus = 34184;
 
-    uint32_t masks[1] = { XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
-        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT };
-    xcb_change_window_attributes(conn, screen->root, XCB_CW_EVENT_MASK,
-            masks);
+    run = true;
+
+    uint32_t mask[1] = {
+        XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // destroy notify
+        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT }; // map request
+    xcb_change_window_attributes(conn, screen->root, XCB_CW_EVENT_MASK, mask);
 
     xcb_flush(conn);
 }
 
 void quit() {
-    run = 0;
+    run = false;
     p("Thanks for using!");
     xcb_disconnect(conn);
     exit(0);
@@ -146,7 +153,7 @@ void loop(void) {
 
         free(ev);
 
-    } while (run == 1);
+    } while (run);
 }
 
 int main(void) {
@@ -155,6 +162,7 @@ int main(void) {
 
     setup();
     signal(SIGINT, quit);
+    p("Welcome to hootwm.");
     loop();
 
     return 0;
