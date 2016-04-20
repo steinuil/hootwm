@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <signal.h>
@@ -42,7 +43,7 @@ void setup();
 void add_window(xcb_window_t win) {
     node *c = (node*)calloc(1,sizeof(node));
     c->win = win;
-    if (master == NULL) {
+    if (!master) {
         master = c;
     } else if (head == NULL) {
         add_node(c, NULL);
