@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <xcb/xcb.h>
 
 #define XCB_MOVE XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
@@ -146,6 +147,19 @@ void tile() {
     } else if (monocle) {
         move_resize(master->win, 0, 0, );
     } else {
+        move_resize(master->win, gap, gap, master_size - gap*2 - bord*2,
+                s_height - gap*2 - bord*2);
+        node *tmp = NULL;
+        uint8_t y, n = 0;
+
+        while (tmp != head) { if (tmp == NULL) tmp = head; ++n, tmp = tmp->next; }
+        tmp = NULL;
+        while (tmp != head) {
+            if (tmp == NULL) tmp = head;
+            moveresize(tmp->win, master_size + gap, y + gap,
+                    s_width - master_size - gap*2 - bord*2,
+                    (s_height / n) - gap*2 - bord*2);
+            y += s_height / n;
     }
 }
 
@@ -159,6 +173,7 @@ void setup() {
 
     master, head, current = NULL;
 
+    master_size = screen_w / 0.6;
     run = true;
 }
 
@@ -204,14 +219,22 @@ void loop() {
     }
 }
 
+void quit() {
+    run = false;
+    puts("ma rippe,,");
+    xcb_disconnect(conn);
+    exit(0);
+}
+
 int main(int argc, char* argv[]) {
     conn = xcb_connect(NULL, NULL);
     if (xcb_connection_has_error(conn)) { DIE("Cannot open display"); }
 
     setup();
 
+    signal(SIGINT, quit);
+
     loop();
 
-    xcb_disconnect(conn);
     return 0;
 }
