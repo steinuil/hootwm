@@ -210,9 +210,9 @@ void loop() {
     while (run && ev = xcb_wait_for_event(conn)) {
         switch (ev->response_type & ~0x80) {
         case XCB_MAP_REQUEST: {
-            map_request((xcb_map_request_event_t*)ev); break; }
+            map_request((xcb_map_request_event_t*)ev); xcb_flush(conn); break; }
         case XCB_DESTROY_NOTIFY: {
-            destroy_notify((xcb_destroy_notify_event*)ev); break; }
+            destroy_notify((xcb_destroy_notify_event*)ev); xcb_flush(conn); break; }
         default: break; }
 
         free(ev);
