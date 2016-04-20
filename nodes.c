@@ -1,6 +1,6 @@
 typedef struct node node;
 struct node {
-    xcb_window_t *win;
+    xcb_window_t win;
     struct node *next;
     struct node *prev;
 };

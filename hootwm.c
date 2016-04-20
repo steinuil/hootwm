@@ -11,14 +11,17 @@
 
 xcb_connection_t *conn;
 xcb_screen_t     *screen;
-xcb_drawable_t    root;
 
 uint16_t screen_w, screen_h;
 uint16_t master_size;
 
-uint16_t gap, bord;
+uint8_t gap, bord;
 
-bool run;
+uint8_t run;
+
+void p(char *s) {
+    printf("catwm: %s\n", s);
+}
 
 // Manage nodes
 #include "nodes.c"
@@ -27,12 +30,13 @@ bool run;
 #include "windows.c"
 
 // Move windows
-void move_resize(xcb_drawable_t win, const uint16_t x, const uint16_t y,
-                                     const uint16_t w, const uint16_t h) {
-    xcb_configure_window(conn, win, XCB_MOVE_RESIZE, (uint16_t[]){x,y,w,h});
+void move_resize(xcb_window_t win, const uint16_t x, const uint16_t y,
+                                   const uint16_t w, const uint16_t h) {
+    uint32_t values[4] = { x, y, w, h };
+    xcb_configure_window(conn, win, XCB_MOVE_RESIZE, values);
 }
 
-void tile() {
+void tile(void) {
     if (!master) {
         return;
     } else if (!head) {
@@ -43,7 +47,8 @@ void tile() {
                 master_size - gap*2 - bord*2, screen_h - gap*2 - bord*2);
 
         node *c;
-        uint8_t y, n = 0;
+        uint8_t y = 0;
+        uint8_t n = 0;
         for (c = head ; c ; c = c->next) ++n;
         for (c = head ; c ; c = c->next) {
             move_resize(c->win, master_size + gap, y + gap,
@@ -54,33 +59,36 @@ void tile() {
     }
 }
 
-void update_current() {
+void update_current(void) {
     node *c;
 
     for (c = master ; c ; c = c->next) {
+        uint32_t a[1] = { bord };
+        xcb_configure_window(conn, c->win, XCB_CONFIG_WINDOW_BORDER_WIDTH, a);
         if (c == current) {
-            xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
-                    win_focus);
+            //xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
+            //        win_focus);
             xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT,
                     c->win, XCB_CURRENT_TIME);
 
-        } else {
-            xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
-                    win_unfocus);
+        } else { ;
+            //xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
+            //        win_unfocus);
         }
     }
 }
 
 // Requests
-void map_request(xcb_map_request_event *ev) {
+void map_request(xcb_map_request_event_t *ev) {
     add_window(ev->window);
     xcb_map_window(conn, ev->window);
 
     tile();
     update_current();
+
 }
 
-void destroy_notify(xcb_destroy_notify_event *ev) {
+void destroy_notify(xcb_destroy_notify_event_t *ev) {
     destroy_window(ev->window);
     
     tile();
@@ -88,46 +96,60 @@ void destroy_notify(xcb_destroy_notify_event *ev) {
 }
 
 // Stuff to make it run
-void setup() {
+void setup(void) {
     screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
-    root = screen->root;
 
     screen_w = screen->width_in_pixels;
     screen_h = screen->height_in_pixels;
 
-    master, head, current = NULL;
+    master = NULL;
+    head = NULL;
+    current = NULL;
 
-    master_size = screen_w / 0.6;
-    run = true;
+    master_size = screen_w * 0.6;
+    gap = 5;
+    bord = 3;
+
+    run = 1;
+
+    uint32_t masks[1] = { XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
+        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT };
+    xcb_change_window_attributes(conn, screen->root, XCB_CW_EVENT_MASK,
+            masks);
+
+    xcb_flush(conn);
 }
 
 void quit() {
-    run = false;
-    puts("ma rippe,,");
+    run = 0;
+    p("Thanks for using!");
     xcb_disconnect(conn);
     exit(0);
 }
 
-void loop() {
+void loop(void) {
     xcb_generic_event_t *ev;
 
-    while (run && ev = xcb_wait_for_event(conn)) {
-        switch(ev->response_type & ~0x80) {
-        case XCB_MAP_REQUEST: {
-            map_request((xcb_map_request_event_t*)ev);
-            xcb_flush(conn);
-            break; }
-        case XCB_DESTROY_NOTIFY: {
-            destroy_notify((xcb_destroy_notify_event*)ev);
-            xcb_flush(conn);
-            break; }
+    do {
+        if ((ev = xcb_poll_for_event(conn))) {
+            switch(ev->response_type & ~0x80) {
+            case XCB_MAP_REQUEST: {
+                map_request((xcb_map_request_event_t*)ev);
+                xcb_flush(conn);
+                } break; 
+            case XCB_DESTROY_NOTIFY: {
+                destroy_notify((xcb_destroy_notify_event_t*)ev);
+                xcb_flush(conn);
+                } break; 
+            }
         }
 
         free(ev);
-    }
+
+    } while (run == 1);
 }
 
-int main(int argc, char* argv[]) {
+int main(void) {
     conn = xcb_connect(NULL, NULL);
     if (xcb_connection_has_error(conn)) return 1;
 

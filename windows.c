@@ -11,12 +11,15 @@ void destroy_window(xcb_window_t win) {
     node *c;
 
     for (c = master ; c ; c = c->next) {
-        if (c->win == win) c = c->win;
+        if (c->win == win) break;
     }
 
     remove_node(c);
 
-    if (c == current) current = c->prev;
+    if (c == current) {
+        if (c->next) current = c->next;
+        else current = c->prev;
+    }
 
     free(c);
 }

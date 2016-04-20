@@ -1,7 +1,7 @@
-NAME= catwm
+NAME= hootwm
 CFLAGS= -Wall -Wextra -pedantic
 CFLAGS+= -std=c99 -O2
-LIBS= -lX11
+LIBS= -lxcb
 CC= gcc
 
 # Only for OpenBSD:
@@ -10,10 +10,10 @@ INCPATH= -I/usr/X11R6/include
 
 FLAGS= $(INCPATH) $(LIBPATH) $(CFLAGS) $(LIBS)
 
-all: catwm
+all: hootwm
 
-catwm:
+hootwm:
 	$(CC) $(FLAGS) $(NAME).c -o $(NAME)
 
 clean:
-	rm -f $(NAME)
+	rm -f $(NAME) *.core

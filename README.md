@@ -1,41 +1,23 @@
-CATWM
+hootwm
 =====
-     /\___/\
-    ( o   o )  Made by cat...
-    (  =^=  )
-    (        )            ... for cat!
-    (         )
-    (          ))))))________________ Cute And Tiny Window Manager
+A very simple tiling window manager written from scratch using C and xcb, inspired by catwm.
 
-## Summary
-catwm is a very simple and lightweight tiling window manager.
+hootwm itself doesn't support keyboard events, but it can be controlled by sending commands using `hootwm -c <command>` (not actually implemented yet). A grabbing keys program such as `xbindkeys` or `sxhkd` may be used to implement hotkeys.
 
 ## Modes
-catwm allows vertical tiled mode with one master area and a stacking area, and monocle mode.
+hootwm tiles windows using one master area and a stacking area on the right.
 
-    +--------+---+    +------------+
-    |        |   |    |            |
-    |        +---+    |            |
-    | Master |   |    |   Master   |
-    |        +---+    |            |
-    |        |   |    |            |
-    +--------+---+    +------------+
-    Tiled             Monocle
+    +--------+---+
+    |        |   |
+    |        +---+
+    | Master |   |
+    |        +---+
+    |        |   |
+    +--------+---+
+    Tiled
 
-A horizontal stacking mode might be added in the future.
+More modes will be added in the future.
 
 ## Installation
- * Install Xlib
- * Edit `config.h`
+ * Install xcb
  * Compile with `make`
-
-## Changes from pyknite/catwm
- * Border width and gap size are now configurable
- * Fixed monocle mode bug where the window would bleed off-screen if the border was bigger than 0
- * Monocle mode now has a different color setting
-
-## Bugs
- * Invoking a window in monocle mode overlays it to the fullscreen window
-   * FIX: send it to next desktop?
- * Sending a window to another desktop causes the wm to crash
- * Compiler warnings
