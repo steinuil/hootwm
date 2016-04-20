@@ -18,12 +18,24 @@ struct node {
 xcb_connection_t *conn;
 xcb_screen_t     *screen;
 xcb_drawable_t    root;
-//xcb_drawable_t    win;
 uint16_t          s_width;
 uint16_t          s_height;
 uint16_t          master_size;
 
 bool run;
+
+void add_node(node *c, node *prev);
+void remove_node(node *c);
+void move_node(node *c, bool up);
+
+void add_window(xcb_window_t win);
+void swap_master();
+void destroy_window();
+
+void map_request(xcb_map_request_event *ev);
+void destroy_notify(xcb_destroy_notify_event *ev);
+void loop();
+void setup();
 
 // Manage windows
 void add_window(xcb_window_t win) {
@@ -51,12 +63,20 @@ void swap_master() {
     master = c;
 }
 
-void destroy_window() {
-    node *c = current;
-
-    if (master == c) {
-        master = NULL;
-        current = NULL;
+void destroy_window(node *c) {
+    if (c == master) {
+        if (head = NULL) {
+            master = NULL;
+            current = NULL;
+        } else {
+            remove_node(head);
+            master = head;
+            if (head == head->next) {
+                head = NULL;
+            } else {
+                head = head->next;
+            }
+        }
     } else if (c == c->next) {
         head = NULL;
         current = master;
@@ -136,6 +156,10 @@ void setup() {
 
     screen_w = screen->width_in_pixels;
     screen_h = screen->height_in_pixels;
+
+    master, head, current = NULL;
+
+    run = true;
 }
 
 
@@ -143,6 +167,25 @@ void map_request(xcb_map_request_event *ev) {
     add_window(ev->window);
     xcb_map_window(conn, ev->window);
 
+    tile();
+}
+
+void destroy_notify(xcb_destroy_notify_event *ev) {
+    node *c = NULL;
+
+    if (current == NULL) {
+        c = master;
+    } else {
+        node *tmp = NULL;
+        while (!(tmp == current)) {
+            if (tmp == NULL) tmp = current;
+            if (tmp->win == ev->window) { c = tmp; break; }
+            tmp = tmp->next;
+        }
+        if (c == NULL) c = master;
+    }
+
+    destroy_window(c);
     tile();
 }
 
@@ -154,11 +197,7 @@ void loop() {
         case XCB_MAP_REQUEST: {
             map_request((xcb_map_request_event_t*)ev); break; }
         case XCB_DESTROY_NOTIFY: {
-            destroy_notify(ev); break; }
-        case XCB_CONFIGURE_NOTIFY: { 
-            configure_notify(ev); break; }
-        case XCB_CONFIGURE_REQUEST: {
-            configure_request(ev); break; }
+            destroy_notify((xcb_destroy_notify_event*)ev); break; }
         default: break; }
 
         free(ev);
@@ -166,8 +205,12 @@ void loop() {
 }
 
 int main(int argc, char* argv[]) {
-    connection = xcb_connect(NULL, NULL);
+    conn = xcb_connect(NULL, NULL);
     if (xcb_connection_has_error(conn)) { DIE("Cannot open display"); }
+
+    setup();
+
+    loop();
 
     xcb_disconnect(conn);
     return 0;
