@@ -2,7 +2,7 @@ NAME= hootwm
 CFLAGS= -Wall -Wextra -pedantic
 CFLAGS+= -std=c99 -O2
 LIBS= -lxcb
-CC= gcc
+CC= cc
 
 # Only for OpenBSD:
 LIBPATH= -L/usr/X11R6/lib

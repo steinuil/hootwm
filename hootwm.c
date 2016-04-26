@@ -4,13 +4,20 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <xcb/xcb.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #define XCB_MOVE XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
 #define XCB_RESIZE XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT
 #define XCB_MOVE_RESIZE XCB_MOVE | XCB_RESIZE
+#define move_resize(win, x, y, w, h) uint32_t tmpvals[4] = { x, y, w, h }; \
+    xcb_configure_window(conn, win, XCB_MOVE_RESIZE, tmpvals);
 
 xcb_connection_t *conn;
 xcb_screen_t     *screen;
+int16_t           pipe_fd;
+char             *pipe_f;
 
 uint16_t screen_w, screen_h;
 uint16_t master_size;
@@ -32,12 +39,6 @@ void p(char *s) {
 #include "windows.c"
 
 // Move windows
-void move_resize(xcb_window_t win, const uint16_t x, const uint16_t y,
-                                   const uint16_t w, const uint16_t h) {
-    uint32_t values[4] = { x, y, w, h };
-    xcb_configure_window(conn, win, XCB_MOVE_RESIZE, values);
-}
-
 void tile(void) {
     if (!master) {
         return;
@@ -67,8 +68,8 @@ void update_current(void) {
 
     for (c = master ; c ; c = c->next) {
         uint32_t a[1] = { bord };
-
         xcb_configure_window(conn, c->win, XCB_CONFIG_WINDOW_BORDER_WIDTH, a);
+
         if (c == current) {
             xcb_change_window_attributes(conn, c->win, XCB_CW_BORDER_PIXEL,
                     &win_focus);
@@ -82,7 +83,7 @@ void update_current(void) {
     }
 }
 
-// Requests
+// Handle events
 void map_request(xcb_map_request_event_t *ev) {
     add_window(ev->window);
     xcb_map_window(conn, ev->window);
@@ -102,6 +103,10 @@ void destroy_notify(xcb_destroy_notify_event_t *ev) {
 // Stuff to make it run
 void setup(void) {
     screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
+
+    pipe_f = "/tmp/hoot";
+    mkfifo(pipe_f, 0666);
+    pipe_fd = open(pipe_f, O_RDONLY | O_NONBLOCK);
 
     screen_w = screen->width_in_pixels;
     screen_h = screen->height_in_pixels;
@@ -130,12 +135,16 @@ void setup(void) {
 void quit() {
     run = false;
     p("Thanks for using!");
+
+    close(pipe_fd); unlink(pipe_f);
     xcb_disconnect(conn);
+
     exit(0);
 }
 
-void loop(void) {
-    xcb_generic_event_t *ev;
+void event_loop(void) {
+    uint32_t length;
+    xcb_generic_event_t *ev; 
 
     do {
         if ((ev = xcb_poll_for_event(conn))) {
@@ -151,6 +160,10 @@ void loop(void) {
             }
         }
 
+        char buffer[] = { '\0', [255] = '\0', };
+        length = read(pipe_fd, buffer, sizeof(buffer));
+        if (length) printf("hootwm: %s", buffer); 
+
         free(ev);
 
     } while (run);
@@ -163,7 +176,7 @@ int main(void) {
     setup();
     signal(SIGINT, quit);
     p("Welcome to hootwm.");
-    loop();
+    event_loop();
 
     return 0;
 }
