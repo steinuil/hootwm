@@ -32,8 +32,8 @@ uint32_t win_focus, win_unfocus;
 
 bool run;
 
+// Manage window stack
 #include "nodes.c"
-
 #include "windows.c"
 
 // Move windows
@@ -65,9 +65,9 @@ void tile(void) {
 }
 
 void update_current(void) {
-    node *w = head;
+    node *w;
 
-    while (w) {
+    for (w = head; w; w = w->next) {
         uint32_t b[1] = { bord };
         xcb_configure_window(conn, w->win, XCB_CONFIG_WINDOW_BORDER_WIDTH, b);
 
@@ -80,8 +80,6 @@ void update_current(void) {
             xcb_change_window_attributes(conn, w->win, XCB_CW_BORDER_PIXEL,
                 &win_unfocus);
         }
-
-        w = w->next;
     }
 }
 
@@ -171,7 +169,6 @@ void event_loop(void) {
             xcb_flush(conn);
         }
 
-        //length = 0;
         free(ev);
 
     } while (run);
