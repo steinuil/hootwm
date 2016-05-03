@@ -168,9 +168,10 @@ void event_loop(void) {
         if ((length = read(pipe_fd, buffer, sizeof(buffer)))) {
             buffer[length-1] = '\0';
             dispatch_command(buffer);
+            xcb_flush(conn);
         }
 
-        length = 0;
+        //length = 0;
         free(ev);
 
     } while (run);
