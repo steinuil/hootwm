@@ -1,3 +1,4 @@
+// Assumes next and prev are set to NULL
 typedef struct node node;
 struct node {
     xcb_window_t win;
@@ -5,42 +6,36 @@ struct node {
     struct node *prev;
 };
 
-node *master, *head, *current;
+node *head;
 
-void insert_node(node *c, node *prev) {
-    if (!prev) {
-        c->prev = NULL;
-        c->next = master;
-
-        if (master) master->prev = c;
-
-        head = master;
-        master = c;
-    } else if (prev == master) {
-        c->prev = master;
-        c->next = head;
-
-        master->next = c; 
-
-        head = c;
-    } else {
-        c->prev = prev;
-        c->next = prev->next;
-        
-        prev->next = c;
+void node_insert_at_head(node *n) {
+    if (head) {
+        head->prev = n;
+        n->next = head;
     }
-
-    if (prev && prev->next) prev->next->prev = c;
+    head = n;
 }
 
-void remove_node(node *c) {
-    if (!c->prev) {
-        master = c->next;
-        if (head) head = c->next->next;
-    } else if (c->prev == master) {
-        head = c->next;
+void node_insert_at_tail(node *n) {
+    if (head) {
+        node *tmp = head;
+        while (tmp->next) tmp = tmp->next;
+        tmp->next = n;
+        n->prev = tmp;
+    } else {
+        head = n;
     }
+}
 
-    if (c->next) c->next->prev = c->prev;
-    if (c->prev) c->prev->next = c->next;
+void node_remove(node *n) {
+    if (n == head) head = n->next;
+    if (n->next) n->next->prev = n->prev;
+    if (n->prev) n->prev->next = n->next;
+}
+
+void node_swap(node *a, node *b) {
+    xcb_window_t tmp;
+    tmp = a->win;
+    a->win = b->win;
+    b->win = tmp;
 }

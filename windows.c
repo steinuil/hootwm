@@ -1,54 +1,47 @@
-void add_window(xcb_window_t win) {
-    node *c = (node*)calloc(1, sizeof(node));
-    c->win = win;
+node *current;
 
-    insert_node(c, NULL);
+void win_create(xcb_window_t win) {
+    node *w = (node*)calloc(1, sizeof(node));
+    w->win = win;
+    w->next = NULL; w->prev = NULL;
 
-    current = c;
+    node_insert_at_tail(w);
+    current = w;
 }
 
-void destroy_window(xcb_window_t win) {
-    node *c;
+void win_destroy(xcb_window_t win) {
+    node *w = head;
+    while (w && w->win != win) w = w->next;
 
-    for (c = master ; c ; c = c->next) {
-        if (c->win == win) break;
+    if (!w) return;
+
+    node_remove(w);
+
+    if (w == current) {
+        if (w->next) current = w->next;
+        else current = w->prev;
     }
 
-    remove_node(c);
-
-    if (c == current) {
-        if (c->next) current = c->next;
-        else current = c->prev;
-    }
-
-    free(c);
+    free(w);
 }
 
-void swap_windows(node *c, node *dest) {
-    node *from = c->prev;
-    node *to = dest->prev;
+void win_swap(node *a, node *b) {
+    if (a == current) current = b;
+    else if (b == current) current = a;
 
-    remove_node(dest); remove_node(c);
-
-    insert_node(c, to); insert_node(dest, from);
+    node_swap(a, b);
 }
 
-void move_window_up(node *c) {
-    if (c != master && c != head) {
-        node *tmp = c->prev->prev;
-
-        remove_node(c->prev); remove_node(c);
-
-        insert_node(c, tmp); insert_node(c->prev, c);
+void win_move_down(node *w) {
+    if (w->next) {
+        if (w == current) current = w->next;
+        node_swap(w, w->next);
     }
 }
 
-void move_window_down(node *c) {
-    if (c->next && c != master) {
-        node *tmp = c->prev;
-
-        remove_node(c->next); remove_node(c);
-
-        insert_node(c->next, tmp); insert_node(c, c->next);
+void win_move_up(node *w) {
+    if (w != head) {
+        if (w == current) current = w->prev;
+        node_swap(w, w->prev);
     }
 }
