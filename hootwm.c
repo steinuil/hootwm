@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "config.h"
 
 #define XCB_MOVE XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
 #define XCB_RESIZE XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT
@@ -118,7 +119,7 @@ void destroy_notify(xcb_destroy_notify_event_t *ev) {
 void setup(void) {
     screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
 
-    pipe_f = "/tmp/hoot";
+    pipe_f = PIPE_FILE;
     mkfifo(pipe_f, 0666);
     pipe_fd = open(pipe_f, O_RDONLY | O_NONBLOCK);
 
@@ -128,9 +129,9 @@ void setup(void) {
     head = NULL;
     current = NULL;
 
-    master_size = screen_w * 0.6;
-    gap = 1;
-    bord = 3;
+    master_size = screen_w * MASTER_SIZE;
+    gap = GAP;
+    bord = BORDER;
 
     win_focus = 52260;
     win_unfocus = 34184;
