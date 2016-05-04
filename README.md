@@ -10,13 +10,15 @@ A grabbing keys utility such as `xbindkeys` or `sxhkd` may be used to implement 
 | ------- | --------- | ----------- |
 | `move`  | `up/down` | Move current window up or down |
 | `focus` | `up/down` | Shift focus up or down |
+| `grow`  | int32_t   | Grow or shrink master area. Positive ints grow, negative ints shrink |
 | `quit`  | -         | Exit the program cleanly |
 
 Example:
     echo move down > /tmp/hoot
+    echo grow -10 > /tmp/hoot
 
 Initial gap and border size, master proportion and pipe filename can be defined at compile time by editing `config.h`.
-A config file to be evaluated at startup may be added later.
+A config file to be evaluated at startup may be added in the future.
 
 ## Modes
 hootwm tiles windows using one master area and a stacking area on the right.

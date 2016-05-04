@@ -42,5 +42,21 @@ void dispatch_command(char command[]) {
             if (current->next) current = current->next;
             update_current();
         }
+    } else if (!strcmp("grow", comm_list[0])) {
+        int32_t s = strtonum(comm_list[1], -screen_w, screen_w, NULL);
+        if (!s) {
+            return;
+        } else if (s > 0) {
+            if (s + master_size > screen_w - (MIN + bord*2 + gap*2)) {
+                master_size  = screen_w - (MIN + bord*2 + gap*2);
+            } else master_size += s;
+        } else {
+            if (s + master_size < (MIN + bord*2 + gap*2)) {
+                master_size = MIN + bord*2 + gap*2;
+            } else master_size += s;
+        }
+
+        tile();
+        update_current();
     }
 }
