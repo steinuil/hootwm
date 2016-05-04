@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 #include <signal.h>
 #include <xcb/xcb.h>
 #include <fcntl.h>
@@ -31,6 +32,17 @@ uint8_t gap, bord;
 uint32_t win_focus, win_unfocus;
 
 bool run;
+
+// Prototypes are shit
+void quit() {
+    run = false;
+    p("Thanks for using!");
+
+    close(pipe_fd); unlink(pipe_f);
+    xcb_disconnect(conn);
+
+    exit(0);
+}
 
 // Manage window stack
 #include "nodes.c"
@@ -133,16 +145,6 @@ void setup(void) {
     xcb_flush(conn);
 }
 
-void quit() {
-    run = false;
-    p("Thanks for using!");
-
-    close(pipe_fd); unlink(pipe_f);
-    xcb_disconnect(conn);
-
-    exit(0);
-}
-
 void event_loop(void) {
     uint32_t length;
     xcb_generic_event_t *ev;
@@ -170,6 +172,9 @@ void event_loop(void) {
         }
 
         free(ev);
+
+        struct timespec t = { 0, 30000000L };
+        nanosleep(&t, NULL);
 
     } while (run);
 }
