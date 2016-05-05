@@ -1,5 +1,3 @@
-node *current;
-
 void win_create(xcb_window_t win) {
     node *w = (node*)calloc(1, sizeof(node));
     w->win = win;
@@ -10,17 +8,27 @@ void win_create(xcb_window_t win) {
 }
 
 void win_destroy(xcb_window_t win) {
-    node *w = head;
-    while (w && w->win != win) w = w->next;
+    node *w;
+    int8_t i;
+    for (i = DESKTOPS; i; --i) {
+        w = desktops[i-1]->head;
+        while (w) {
+            if (w->win == win) goto rest;
+            w = w->next;
+        }
+    }
 
     if (!w) return;
-
+rest:
     node_remove(w);
 
     if (w == current) {
         if (w->next) current = w->next;
         else current = w->prev;
     }
+
+    if (w == desktops[i-1]->head) desktops[i-1]->head = NULL;
+    if (w == desktops[i-1]->current) desktops[i-1]->current = NULL;
 
     free(w);
 }

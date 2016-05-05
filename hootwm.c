@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
 #include "config.h"
 
 #define XCB_MOVE XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
@@ -17,8 +18,21 @@
 #define move_resize(win, x, y, w, h) \
     uint32_t tmpvals[4] = { x, y, w, h }; \
     xcb_configure_window(conn, win, XCB_MOVE_RESIZE, tmpvals);
-
 #define p(s) printf("hootwm: %s\n", s)
+
+typedef struct node node;
+typedef struct desktop desktop;
+
+struct node {
+    xcb_window_t win;
+    struct node *next;
+    struct node *prev;
+};
+
+struct desktop {
+    node *head;
+    node *current;
+};
 
 xcb_connection_t *conn;
 xcb_screen_t     *screen;
@@ -32,12 +46,19 @@ uint8_t gap, bord;
 
 uint32_t win_focus, win_unfocus;
 
+node *head, *current;
+desktop *current_desktop,
+        *desktops[DESKTOPS];
+
 bool run;
 
 // Prototypes are shit
 void quit() {
     run = false;
     p("Thanks for using!");
+
+    //for (node *w = head; w; w = w->next) free(w);
+    for (int8_t i = 0; i < DESKTOPS; free(desktops[i++]));
 
     close(pipe_fd); unlink(pipe_f);
     xcb_disconnect(conn);
@@ -48,6 +69,7 @@ void quit() {
 // Manage window stack
 #include "nodes.c"
 #include "windows.c"
+#include "desktops.c"
 
 // Move windows
 void tile(void) {
@@ -99,9 +121,9 @@ void update_current(void) {
 // Handle events
 void map_request(xcb_map_request_event_t *ev) {
     win_create(ev->window);
-    xcb_map_window(conn, ev->window);
 
     tile();
+    xcb_map_window(conn, ev->window);
     update_current();
 }
 
@@ -137,6 +159,13 @@ void setup(void) {
     win_unfocus = 34184;
 
     run = true;
+
+    for (int8_t i = 0; i < DESKTOPS; ++i) {
+        desktops[i] = (desktop*)calloc(1,sizeof(desktop));
+        desktops[i]->head = NULL;
+        desktops[i]->current = NULL;
+    }
+    current_desktop = desktops[0];
 
     uint32_t mask[1] = {
         XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | // destroy notify

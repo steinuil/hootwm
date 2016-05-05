@@ -1,13 +1,3 @@
-// Assumes next and prev are set to NULL
-typedef struct node node;
-struct node {
-    xcb_window_t win;
-    struct node *next;
-    struct node *prev;
-};
-
-node *head;
-
 void node_insert_at_head(node *n) {
     if (head) {
         head->prev = n;

@@ -16,8 +16,11 @@ all: main
 install: main
 	mv $(NAME) $(INSTALLPATH)
 
+uninstall: clean
+	rm -f $(INSTALLPATH)/$(NAME)
+
 main:
 	$(CC) $(FLAGS) $(NAME).c -o $(NAME)
 
 clean:
-	rm -f $(NAME) $(INSTALLPATH)/$(NAME)
+	rm -f $(NAME) *.core
